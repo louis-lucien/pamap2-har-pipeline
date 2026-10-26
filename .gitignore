@@ -1,0 +1,23 @@
+# Données (ne jamais versionner les gros fichiers)
+data/raw/Protocol/*.dat
+data/interim/*
+data/processed/*
+!**/.gitkeep
+
+# Modèles entraînés
+models/*.joblib
+reports/figures/*.png
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Prefect / cache
+.prefect/
+.pytest_cache/
+
+# OS
+.DS_Store

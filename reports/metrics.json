@@ -1,0 +1,28 @@
+{
+  "f1_macro_cv_grouped": 0.9345,
+  "f1_macro_test_subject_wise": 0.9374,
+  "accuracy_test": 0.9375,
+  "naive_split_f1_LEAKY": 0.9477,
+  "leakage_gap": 0.0103,
+  "baseline_logistic_regression": {
+    "f1_cv": 0.9345,
+    "f1_test": 0.9374
+  },
+  "champion_deployed": "logistic_regression",
+  "challenger_cv": 0.9042,
+  "best_params": {},
+  "train_subjects": [
+    101,
+    103,
+    104,
+    105,
+    107,
+    109
+  ],
+  "test_subjects": [
+    102,
+    106,
+    108
+  ],
+  "n_test_windows": 192
+}

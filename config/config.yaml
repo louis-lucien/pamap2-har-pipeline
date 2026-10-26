@@ -1,0 +1,77 @@
+# ============================================================================
+#  Configuration centrale — PAMAP2 Human Activity Recognition
+#  Tout paramètre métier ou technique se règle ici, jamais dans le code.
+# ============================================================================
+
+project:
+  name: "pamap2-har-pipeline"
+  version: "1.0.0"
+  random_state: 42
+
+paths:
+  raw_dir:    "data/raw/Protocol"          # fichiers subjectNNN.dat
+  interim:    "data/interim/signals_clean.parquet"
+  features:   "data/processed/window_features.parquet"
+  model:      "models/har_model.joblib"
+  metrics:    "reports/metrics.json"
+  figures:    "reports/figures"
+
+# --- Source des données -------------------------------------------------------
+# mode "uci"   : télécharge le vrai dataset PAMAP2 depuis l'UCI ML Repository
+#                (https://archive.ics.uci.edu) au premier lancement.
+# mode "local" : utilise les .dat déjà présents dans data/raw/Protocol
+#                (vrai jeu déposé à la main, ou jeu synthétique généré par
+#                 python -m src.generate_sample_data).
+# En mode uci, repli automatique sur le local si le téléchargement échoue.
+data_source:
+  mode: "local"
+  uci_url: "https://archive.ics.uci.edu/static/public/231/pamap2+physical+activity+monitoring.zip"
+
+# --- Capteurs (spécification officielle PAMAP2) --------------------------------
+sensors:
+  sampling_rate_hz: 100        # IMU Colibri
+  heart_rate_hz: 9             # moniteur cardiaque (~9 Hz -> NaN entre mesures)
+
+# --- Activités retenues (IDs officiels PAMAP2) ---------------------------------
+activities:
+  1:  "allongé"
+  2:  "assis"
+  3:  "debout"
+  4:  "marche"
+  5:  "course"
+  6:  "vélo"
+  12: "montée escaliers"
+  13: "descente escaliers"
+# L'ID 0 = période transitoire entre activités -> toujours exclu.
+
+# --- Nettoyage ------------------------------------------------------------------
+cleaning:
+  drop_transient: true          # retirer activityID = 0
+  drop_orientation: true        # 4 colonnes d'orientation par IMU : invalides (doc officielle)
+  hr_interpolation: "linear"    # le cardio à ~9 Hz laisse des NaN entre mesures
+  max_gap_interpolate: 20       # interpolation des trous IMU <= 20 échantillons (0,2 s)
+
+# --- Segmentation en fenêtres ---------------------------------------------------
+segmentation:
+  window_size: 256              # 2,56 s à 100 Hz (standard de la littérature HAR)
+  overlap: 0.5                  # 50 % de recouvrement entre fenêtres
+  min_valid_ratio: 0.8          # une fenêtre avec >20 % de NaN restants est rejetée
+
+# --- Modélisation ----------------------------------------------------------------
+model:
+  algorithm: "random_forest"    # "random_forest" ou "xgboost"
+  # Séparation PAR SUJET : les fenêtres d'un même sujet ne peuvent pas être
+  # à la fois dans le train et le test (sinon fuite -> score gonflé).
+  split: "subject_wise"
+  test_subjects_ratio: 0.33     # ~3 sujets sur 9 réservés au test
+  cv_folds: 4
+  cv_test_size: 0.25            # part des groupes en validation à chaque fold
+  naive_test_size: 0.3          # taille du test pour la démonstration de fuite
+  random_forest:
+    n_estimators: [300]
+    max_depth: [12, null]
+    min_samples_leaf: [1, 3]
+  xgboost:
+    n_estimators: [300]
+    max_depth: [4, 6]
+    learning_rate: [0.1]
